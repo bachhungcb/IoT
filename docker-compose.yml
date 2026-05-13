@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  database:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: smarthome_db
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStrong!Pass123
+    ports:
+      - "1433:1433"
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - smarthome_network
+
+  backend:
+    build: ./backend
+    container_name: smarthome_be
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=database;Database=SmartHomeHub;User Id=sa;Password=YourStrong!Pass123;TrustServerCertificate=True
+      - MQTT__Broker=broker.hivemq.com
+      - MQTT__Port=1883
+    depends_on:
+      - database
+    networks:
+      - smarthome_network
+
+  frontend:
+    build: ./frontend
+    container_name: smarthome_fe
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:3000/api
+    depends_on:
+      - backend
+    networks:
+      - smarthome_network
+
+  nginx:
+    image: nginx:latest
+    container_name: smarthome_proxy
+    ports:
+      - "80:3000"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - smarthome_network
+
+networks:
+  smarthome_network:
+    driver: bridge

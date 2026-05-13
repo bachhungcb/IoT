@@ -1,0 +1,6 @@
+{
+  "name": "SmartHome Hub Monitor",
+  "description": "Smart home hub with a multi-container architecture including a C# (.NET) backend, MSSQL database, and Nginx proxy.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
