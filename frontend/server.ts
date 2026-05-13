@@ -58,7 +58,9 @@ async function startServer() {
   mqttClient.on("connect", () => {
     console.log("Connected to MQTT broker");
     mqttClient.subscribe("smarthome/sensor/#");
+    mqttClient.subscribe("/smarthome/sensor/#");
     mqttClient.subscribe("smarthome/status/#");
+    mqttClient.subscribe("/smarthome/status/#");
   });
 
   mqttClient.on("error", (err) => {
@@ -69,11 +71,29 @@ async function startServer() {
     const payload = message.toString();
     console.log(`MQTT Message: ${topic} -> ${payload}`);
 
-    if (topic.startsWith("smarthome/sensor/")) {
-      const sensor = topic.split("/").pop();
-      if (sensor && sensor in sensorData) {
-        sensorData[sensor as keyof typeof sensorData] = parseFloat(payload);
-        io.emit("sensor_update", { sensor, value: sensorData[sensor as keyof typeof sensorData] });
+    if (topic.startsWith("smarthome/sensor") || topic.startsWith("/smarthome/sensor")) {
+      try {
+        const data = JSON.parse(payload);
+        
+        // Map the payload properties to our sensor types
+        if (data.temperature !== undefined) {
+          sensorData.temperature = data.temperature;
+          io.emit("sensor_update", { sensor: "temperature", value: sensorData.temperature });
+        }
+        if (data.humidity !== undefined) {
+          sensorData.humidity = data.humidity;
+          io.emit("sensor_update", { sensor: "humidity", value: sensorData.humidity });
+        }
+        if (data.light !== undefined) {
+          sensorData.light = data.light;
+          io.emit("sensor_update", { sensor: "light", value: sensorData.light });
+        }
+        if (data.sound_db !== undefined) {
+          sensorData.noise = data.sound_db;
+          io.emit("sensor_update", { sensor: "noise", value: sensorData.noise });
+        }
+      } catch (e) {
+        console.error("Failed to parse JSON payload on frontend:", e);
       }
     } else if (topic.startsWith("smarthome/status/")) {
       const device = topic.split("/").pop();
@@ -84,20 +104,6 @@ async function startServer() {
     }
   });
 
-  // --- Simulated Data for Preview ---
-  setInterval(() => {
-    // Random variations
-    sensorData.temperature = 22 + Math.random() * 5;
-    sensorData.humidity = 40 + Math.random() * 20;
-    sensorData.air_quality = 10 + Math.random() * 40;
-    sensorData.noise = 30 + Math.random() * 15;
-    sensorData.light = 400 + Math.random() * 200;
-
-    // Send updates to clients
-    Object.entries(sensorData).forEach(([sensor, value]) => {
-      io.emit("sensor_update", { sensor, value });
-    });
-  }, 3000);
 
   // --- WebSocket Integration ---
   io.on("connection", (socket) => {

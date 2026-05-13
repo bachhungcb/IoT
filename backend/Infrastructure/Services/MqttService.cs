@@ -30,10 +30,30 @@ namespace SmartHomeHub.Backend.Infrastructure.Services
             var broker = _config["MQTT:Broker"] ?? "broker.hivemq.com";
             var port = int.Parse(_config["MQTT:Port"] ?? "1883");
 
-            var options = new MqttClientOptionsBuilder()
-                .WithTcpServer(broker, port)
-                .WithCredentials(_config["MQTT:Username"], _config["MQTT:Password"])
-                .Build();
+            // Strip prefix if any exists so we can cleanly control it
+            broker = broker.Replace("wss://", "").Replace("ws://", "").Replace("mqtt://", "");
+
+            var optionsBuilder = new MqttClientOptionsBuilder()
+                .WithCredentials(_config["MQTT:Username"], _config["MQTT:Password"]);
+
+            // If the port is 443, it is extremely likely this is a WebSocket over TLS hosted behind a proxy/Tailscale
+            if (port == 443)
+            {
+                optionsBuilder
+                    .WithWebSocketServer(o => o.WithUri($"wss://{broker}:{port}/mqtt"))
+                    .WithTlsOptions(o => 
+                    {
+                        o.UseTls();
+                        o.WithCertificateValidationHandler(_ => true); // Trust proxy certificates
+                    });
+            }
+            else
+            {
+                // Fallback to standard TCP for local/internal connections
+                optionsBuilder.WithTcpServer(broker, port);
+            }
+
+            var options = optionsBuilder.Build();
 
             _mqttClient.DisconnectedAsync += async e =>
             {
@@ -46,8 +66,8 @@ namespace SmartHomeHub.Backend.Infrastructure.Services
                 var topic = e.ApplicationMessage.Topic;
                 var payload = Encoding.UTF8.GetString(e.ApplicationMessage.PayloadSegment);
 
-                // Assuming your sensor publishes to a topic like "smarthome/sensor/data"
-                if (topic.StartsWith("smarthome/sensor/"))
+                // Check for topics with or without leading/trailing slash
+                if (topic.StartsWith("smarthome/sensor") || topic.StartsWith("/smarthome/sensor"))
                 {
                     try 
                     {
@@ -80,8 +100,9 @@ namespace SmartHomeHub.Backend.Infrastructure.Services
 
             await _mqttClient.ConnectAsync(options);
             
-            // Subscribe to important topics
+            // Subscribe to important topics, handling both with and without leading slash
             await _mqttClient.SubscribeAsync("smarthome/sensor/#");
+            await _mqttClient.SubscribeAsync("/smarthome/sensor/#");
         }
 
         private SensorReading CreateReading(string type, double value, DateTime timestamp)

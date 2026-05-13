@@ -16,3 +16,4 @@ backend/*.log
 backend/.env*
 backend/bin/
 backend/obj/
+backend/appsettings.json

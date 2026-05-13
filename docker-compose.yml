@@ -18,7 +18,7 @@ services:
     build: ./backend
     container_name: smarthome_be
     environment:
-      - ConnectionStrings__DefaultConnection=Server=database;Database=SmartHomeHub;User Id=sa;Password=YourStrong!Pass123;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Server=database;Database=SmartHomeHub;User Id=sa;Password=A8*kao1i;TrustServerCertificate=True
       - MQTT__Broker=${MQTT_BROKER_URL}
       - MQTT__Port=${MQTT_PORT}
       - MQTT__Username=${MQTT_USERNAME}
@@ -33,6 +33,7 @@ services:
     container_name: smarthome_fe
     ports:
       - "3000:3000"
+      - "24678:24678" # Vite HMR WebSocket port
     environment:
       - VITE_API_URL=http://localhost:3000/api
       - VITE_MQTT_BROKER_URL=${MQTT_BROKER_URL}
