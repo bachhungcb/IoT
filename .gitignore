@@ -15,6 +15,4 @@ backend/.DS_Store
 backend/*.log
 backend/.env*
 backend/bin/
-backend/obj/*
-backend/obj/Debug/net8.0/SmartHomeHub.Backend.AssemblyInfo.cs
-backend/obj/Debug/net8.0/SmartHomeHub.Backend.AssemblyInfoInputs.cache
+backend/obj/
