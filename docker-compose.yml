@@ -19,8 +19,10 @@ services:
     container_name: smarthome_be
     environment:
       - ConnectionStrings__DefaultConnection=Server=database;Database=SmartHomeHub;User Id=sa;Password=YourStrong!Pass123;TrustServerCertificate=True
-      - MQTT__Broker=broker.hivemq.com
-      - MQTT__Port=1883
+      - MQTT__Broker=${MQTT_BROKER_URL}
+      - MQTT__Port=${MQTT_PORT}
+      - MQTT__Username=${MQTT_USERNAME}
+      - MQTT__Password=${MQTT_PASSWORD}
     depends_on:
       - database
     networks:
@@ -33,6 +35,11 @@ services:
       - "3000:3000"
     environment:
       - VITE_API_URL=http://localhost:3000/api
+      - VITE_MQTT_BROKER_URL=${MQTT_BROKER_URL}
+      - VITE_MQTT_PORT=${MQTT_PORT}
+      - VITE_MQTT_USERNAME=${MQTT_USERNAME}
+      - VITE_MQTT_PASSWORD=${MQTT_PASSWORD}
+      - VITE_GEMINI_API_KEY=${GEMINI_API_KEY}
     depends_on:
       - backend
     networks:

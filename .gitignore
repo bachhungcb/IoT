@@ -6,3 +6,13 @@ coverage/
 *.log
 .env*
 !.env.example
+
+backend/node_modules/
+backend/build/
+backend/dist/
+backend/coverage/
+backend/.DS_Store
+backend/*.log
+backend/.env*
+backend/bin/
+backend/obj/
